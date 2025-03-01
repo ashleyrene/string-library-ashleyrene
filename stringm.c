@@ -1,51 +1,87 @@
 #include "stringm.h"
 
-// Custom implementation of strlen_m
-size_t strlen_m(const char *string) {
-    size_t len = 0;
-    while (string[len] != '\0') {
-        len++;
+/*
+** strlen_m calculates the length of a string
+** const char *string - string to calculate length of
+** return the size of the string
+**
+** note: you can assume string is not NULL
+*/
+size_t strlen_m(const char *string)
+{
+    size_t length = 0;
+    while (string[length] != '\0') {
+        length++;
     }
-    return len;
+    return length;
 }
 
-// Custom implementation of strncpy_m (with two arguments)
-char *strncpy_m(char *dest, const char *string, size_t n) {
+/*
+** strncpy_m copies n characters of string and returns it
+** const char *string - string to copy
+** size_t n - number of characters to copy (not including null character)
+** return a copy of first n characters of string
+**
+** note: you can assume string is not NULL
+** hint: you will need to malloc a size n + 1 string to accommodate the null character
+*/
+char *strncpy_m(const char *string, size_t n)
+{
+    // Allocate memory for the copied string, including space for the null terminator
+    char *copy = (char *)malloc(n + 1);
+    if (copy == NULL) {
+        return NULL;
+    }
+
+    // Copy the first n characters from string
     for (size_t i = 0; i < n; i++) {
-        dest[i] = string[i];
+        copy[i] = string[i];
     }
-    dest[n] = '\0';  // Null-terminate the string
-    return dest;
+
+    // Null-terminate the copied string
+    copy[n] = '\0';
+
+    return copy;
 }
 
-// Custom implementation of join_m
-char *join_m(Strings strings, const char *delimiter) {
+/*
+** join_m joins an array of strings separated by a delimiter
+** Strings strings - structure that stores an array of strings
+** const char *delimiter - delimiter string which joins each string
+** return the string created by joining all strings with the delimiter
+**
+** note: you can assume delimiter is not NULL
+** hint: return NULL if strings.num_strings is 0
+*/
+char *join_m(Strings strings, const char *delimiter)
+{
     if (strings.num_strings == 0) {
         return NULL;
     }
 
     size_t delimiter_len = strlen_m(delimiter);
-    size_t total_length = 0;
+    size_t total_len = 0;
 
-    // Calculate total length required
-    for (int i = 0; i < strings.num_strings; i++) {
-        total_length += strlen_m(strings.strings[i]);
+    // Calculate the total length of the resulting string
+    for (size_t i = 0; i < strings.num_strings; i++) {
+        total_len += strlen_m(strings.strings[i]);
+        if (i < strings.num_strings - 1) {
+            total_len += delimiter_len;
+        }
     }
-    total_length += (strings.num_strings - 1) * delimiter_len;  // Space for delimiters
 
-    char *result = malloc(total_length + 1);  // Plus one for the null terminator
+    // Allocate memory for the result
+    char *result = (char *)malloc(total_len + 1);
     if (result == NULL) {
         return NULL;
     }
 
     size_t pos = 0;
-    for (int i = 0; i < strings.num_strings; i++) {
-        size_t str_len = strlen_m(strings.strings[i]);
-        for (size_t j = 0; j < str_len; j++) {
+    for (size_t i = 0; i < strings.num_strings; i++) {
+        size_t len = strlen_m(strings.strings[i]);
+        for (size_t j = 0; j < len; j++) {
             result[pos++] = strings.strings[i][j];
         }
-
-        // Add delimiter if it's not the last string
         if (i < strings.num_strings - 1) {
             for (size_t j = 0; j < delimiter_len; j++) {
                 result[pos++] = delimiter[j];
@@ -53,110 +89,156 @@ char *join_m(Strings strings, const char *delimiter) {
         }
     }
 
-    result[pos] = '\0';  // Null-terminate the result string
+    result[pos] = '\0';
+
     return result;
 }
 
-// Custom implementation of free_strings
-void free_strings(Strings strings) {
-    for (int i = 0; i < strings.num_strings; i++) {
-        free(strings.strings[i]);
+/*
+** free_strings frees all allocated elements in strings
+** Strings strings - free each string in strings.strings and strings.strings itself
+*/
+void free_strings(Strings strings)
+{
+    if (strings.strings != NULL) {
+        for (size_t i = 0; i < strings.num_strings; i++) {
+            free(strings.strings[i]);
+        }
+        free(strings.strings);
     }
-    free(strings.strings);
 }
 
-// Custom implementation of split_m
-Strings split_m(const char *string, const char *pattern) {
-    Strings result = {0, NULL};
-
+/*
+** split_m splits a string at any occurrence of pattern
+** const char *string - string that is searched for the pattern
+** const char *pattern - pattern which string should be split
+** return a String structure which contains an array of each string
+**
+** note: you may assume string and pattern are not NULL
+** hint 1: TA solution uses strlen_m, strstr_m, and strncpy_m
+** hint 2: first calculate how many strings are needed, which is: 
+**         (the number of times the delimiter appears + 1)
+** hint 3: when trying to store a substring, think about how the length of 
+**         that substring might be calculated in terms of pointer arithmetic
+**         - what is the outcome of adding or subtracting pointers?
+** hint 3.5: strstr_m will return a pointer to the first character of the next occurrence 
+**           or NULL if not found
+*/
+Strings split_m(const char *string, const char *pattern)
+{
+    Strings result = { .num_strings = 0, .strings = NULL };
+    
     size_t pattern_len = strlen_m(pattern);
-    size_t string_len = strlen_m(string);
+    const char *start = string;
+    size_t count = 1;
 
-    size_t count = 1;  // There's at least one string in the result
-    const char *current = string;
-
-    // Count occurrences of the pattern
-    while ((current = strstr_m(current, pattern)) != NULL) {
+    // Count how many times the pattern occurs in the string
+    while ((start = strstr_m(start, pattern)) != NULL) {
         count++;
-        current += pattern_len;
+        start += pattern_len;
     }
 
-    result.strings = malloc(count * sizeof(char *));
+    // Allocate memory for the result structure
+    result.strings = (char **)malloc(count * sizeof(char *));
     if (result.strings == NULL) {
         return result;
     }
 
-    current = string;
+    start = string;
     size_t index = 0;
+    const char *end;
 
-    // Split the string
-    while ((current = strstr_m(current, pattern)) != NULL) {
-        size_t len = current - string;
-        result.strings[index] = malloc(len + 1);
+    // Split the string based on the pattern
+    while ((end = strstr_m(start, pattern)) != NULL) {
+        size_t len = end - start;
+        result.strings[index] = (char *)malloc(len + 1);
         if (result.strings[index] == NULL) {
-            free_strings(result);  // Free allocated strings
-            result.strings = NULL;
+            free_strings(result);
+            result.num_strings = 0;
             return result;
         }
-        strncpy_m(result.strings[index], string, len);  // Corrected strncpy_m usage
-        result.strings[index][len] = '\0';  // Null-terminate
+        for (size_t i = 0; i < len; i++) {
+            result.strings[index][i] = start[i];
+        }
+        result.strings[index][len] = '\0';
+        start = end + pattern_len;
         index++;
-
-        current += pattern_len;
-        string = current;
     }
 
-    // Handle the final part after the last delimiter
-    result.strings[index] = malloc(string_len - (current - string) + 1);
-    if (result.strings[index] != NULL) {
-        strncpy_m(result.strings[index], string, string_len - (current - string));  // Corrected strncpy_m usage
-        result.strings[index][string_len - (current - string)] = '\0';  // Null-terminate
+    // Handle the last part after the last occurrence of the pattern
+    if (*start != '\0') {
+        result.strings[index] = strdup(start);
+        index++;
     }
 
-    result.num_strings = count;
+    result.num_strings = index;
+
     return result;
 }
 
-// Custom implementation of find_and_replace_all_m
-char *find_and_replace_all_m(const char *string, const char *pattern, const char *replacement) {
-    size_t string_len = strlen_m(string);
-    size_t pattern_len = strlen_m(pattern);
-    size_t replacement_len = strlen_m(replacement);
-
-    size_t result_len = string_len;
-    const char *current = string;
-
-    // Calculate the new string length after replacements
-    while ((current = strstr_m(current, pattern)) != NULL) {
-        result_len += replacement_len - pattern_len;
-        current += pattern_len;
+/*
+** find_and_replace_all_m finds each occurrence of the pattern in the string and replaces it
+** const char *string - string to search through
+** const char *pattern - pattern to search for in the string
+** const char *replacement - replacement string for each occurrence of the pattern in the string
+** return a string in which every occurrence of pattern is replaced replacement
+**
+** note: you may assume string, pattern, and replacement are all not NULL
+** hint: there are two main ways of implementing this function, one involves many lines, one involves four
+*/
+char *find_and_replace_all_m(const char *string, const char *pattern, const char *replacement)
+{
+    if (string == NULL || pattern == NULL || replacement == NULL) {
+        return NULL;
     }
 
-    char *result = malloc(result_len + 1);
+    size_t pattern_len = strlen_m(pattern);
+    size_t replacement_len = strlen_m(replacement);
+    size_t new_len = 0;
+    const char *start = string;
+
+    // Calculate the length of the result string
+    while ((start = strstr_m(start, pattern)) != NULL) {
+        new_len += replacement_len;
+        start += pattern_len;
+    }
+
+    // Calculate the length of the remaining string
+    new_len += strlen_m(string);
+
+    // Allocate memory for the new string
+    char *result = (char *)malloc(new_len + 1);
     if (result == NULL) {
         return NULL;
     }
 
     size_t pos = 0;
-    current = string;
-    while ((current = strstr_m(current, pattern)) != NULL) {
-        size_t len = current - string;
-        strncpy_m(result + pos, string, len);  // Corrected strncpy_m usage
-        pos += len;
-        strncpy_m(result + pos, replacement, replacement_len);  // Corrected strncpy_m usage
-        pos += replacement_len;
+    start = string;
 
-        current += pattern_len;
-        string = current;
+    // Replace all occurrences of the pattern
+    while ((start = strstr_m(start, pattern)) != NULL) {
+        size_t len = start - string;
+        memcpy(result + pos, string, len);
+        pos += len;
+        memcpy(result + pos, replacement, replacement_len);
+        pos += replacement_len;
+        start += pattern_len;
+        string = start;
     }
 
     // Copy the remaining part of the string
-    strncpy_m(result + pos, string, string_len - (current - string));  // Corrected strncpy_m usage
+    strcpy(result + pos, string);
+
     return result;
 }
 
-// This function is already implemented for you, do not modify
-const char *strstr_m(const char *haystack, const char *needle) {
+/*
+** The strstr function is implemented for you to use -- DO NOT MODIFY
+** If you are curious about the algorithm used, look up the Knuth-Morris-Pratt (KMP)
+** algorithm that can find a substring inside another string 'blazingly fast'
+*/
+const char *strstr_m(const char *haystack, const char *needle)
+{
     size_t haystack_len = 0, needle_len = 0;
     for (const char *h = haystack; *h; h++)
         haystack_len++;
@@ -206,4 +288,4 @@ const char *strstr_m(const char *haystack, const char *needle) {
     if (success)
         return haystack + (r - l - needle_len - 1);
     return NULL;
-}
+} 
