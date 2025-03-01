@@ -29,9 +29,6 @@ char *strncpy_m(const char *string, size_t n)
 {
     // Allocate memory for the copied string, including space for the null terminator
     char *copy = (char *)malloc(n + 1);
-    if (copy == NULL) {
-        return NULL; // Return NULL if malloc fails
-    }
 
     // Copy the first n characters from string
     for (size_t i = 0; i < n; i++) {
