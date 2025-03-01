@@ -9,19 +9,13 @@ size_t strlen_m(const char *string) {
     return len;
 }
 
-// Custom implementation of strncpy_m
-char *strncpy_m(const char *string, size_t n) {
-    char *copy = malloc(n + 1);  // Allocate space for the string plus null terminator
-    if (copy == NULL) {
-        return NULL;
-    }
-
+// Custom implementation of strncpy_m (with two arguments)
+char *strncpy_m(char *dest, const char *string, size_t n) {
     for (size_t i = 0; i < n; i++) {
-        copy[i] = string[i];
+        dest[i] = string[i];
     }
-    copy[n] = '\0';  // Ensure null-termination
-
-    return copy;
+    dest[n] = '\0';  // Null-terminate the string
+    return dest;
 }
 
 // Custom implementation of join_m
@@ -104,8 +98,8 @@ Strings split_m(const char *string, const char *pattern) {
             result.strings = NULL;
             return result;
         }
-        strncpy_m(result.strings[index], string, len);
-        result.strings[index][len] = '\0';
+        strncpy_m(result.strings[index], string, len);  // Corrected strncpy_m usage
+        result.strings[index][len] = '\0';  // Null-terminate
         index++;
 
         current += pattern_len;
@@ -115,8 +109,8 @@ Strings split_m(const char *string, const char *pattern) {
     // Handle the final part after the last delimiter
     result.strings[index] = malloc(string_len - (current - string) + 1);
     if (result.strings[index] != NULL) {
-        strncpy_m(result.strings[index], string, string_len - (current - string));
-        result.strings[index][string_len - (current - string)] = '\0';
+        strncpy_m(result.strings[index], string, string_len - (current - string));  // Corrected strncpy_m usage
+        result.strings[index][string_len - (current - string)] = '\0';  // Null-terminate
     }
 
     result.num_strings = count;
@@ -147,16 +141,17 @@ char *find_and_replace_all_m(const char *string, const char *pattern, const char
     current = string;
     while ((current = strstr_m(current, pattern)) != NULL) {
         size_t len = current - string;
-        strncpy_m(result + pos, string, len);
+        strncpy_m(result + pos, string, len);  // Corrected strncpy_m usage
         pos += len;
-        strncpy_m(result + pos, replacement, replacement_len);
+        strncpy_m(result + pos, replacement, replacement_len);  // Corrected strncpy_m usage
         pos += replacement_len;
 
         current += pattern_len;
         string = current;
     }
 
-    strcpy(result + pos, string);  // Copy the remaining part of the string
+    // Copy the remaining part of the string
+    strncpy_m(result + pos, string, string_len - (current - string));  // Corrected strncpy_m usage
     return result;
 }
 
