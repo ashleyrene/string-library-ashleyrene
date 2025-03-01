@@ -44,6 +44,24 @@ char *strncpy_m(const char *string, size_t n)
 }
 
 /*
+** memcpy_m copies n bytes of data from source to destination
+** void *dest - destination memory location
+** const void *src - source memory location
+** size_t n - number of bytes to copy
+** return a pointer to the destination
+*/
+void *memcpy_m(void *dest, const void *src, size_t n)
+{
+    unsigned char *d = dest;
+    const unsigned char *s = src;
+
+    for (size_t i = 0; i < n; i++)
+        d[i] = s[i];
+
+    return dest;
+}
+
+/*
 ** join_m joins an array of strings separated by a delimiter
 ** Strings strings - structure that stores an array of strings
 ** const char *delimiter - delimiter string which joins each string
@@ -186,11 +204,11 @@ char *find_and_replace_all_m(const char *string, const char *pattern, const char
     {
         // Copy text before the pattern
         size_t prefix_len = start - string;
-        memcpy(result + pos, string, prefix_len);
+        memcpy_m(result + pos, string, prefix_len);
         pos += prefix_len;
 
         // Copy the replacement string
-        memcpy(result + pos, replacement, replacement_len);
+        memcpy_m(result + pos, replacement, replacement_len);
         pos += replacement_len;
 
         start += pattern_len;
