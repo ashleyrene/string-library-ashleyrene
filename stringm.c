@@ -116,72 +116,64 @@ void free_strings(Strings strings)
 **
 ** note: you may assume string and pattern are not NULL
 ** hint 1: TA solution uses strlen_m, strstr_m, and strncpy_m
-** hint 2: first calculate how many strings are needed, which is: 
+** hint 2: first calculate how many strings are needed, which is:
 **         (the number of times the delimiter appears + 1)
-** hint 3: when trying to store a substring, think about how the length of 
+** hint 3: when trying to store a substring, think about how the length of
 **         that substring might be calculated in terms of pointer arithmetic
 **         - what is the outcome of adding or subtracting pointers?
-** hint 3.5: strstr_m will return a pointer to the first character of the next occurrence 
+** hint 3.5: strstr_m will return a pointer to the first character of the next occurrence
 **           or NULL if not found
 */
 Strings split_m(const char *string, const char *pattern)
 {
-    Strings result = { .num_strings = 0, .strings = NULL };
-    
+    Strings result = {NULL, 0};  // Initialize result
+
+    if (string == NULL || pattern == NULL || strlen_m(pattern) == 0)
+    {
+        return result;  // Return empty result if inputs are invalid
+    }
+
     size_t pattern_len = strlen_m(pattern);
-    const char *start = string;
-    size_t count = 1;
+    size_t count = 1;  // At least one substring will always exist
 
-    // Count how many times the pattern occurs in the string
-    while ((start = strstr_m(start, pattern)) != NULL) {
+    // Count how many substrings we will have by checking the occurrences of the pattern
+    const char *temp = string;
+    while ((temp = strstr_m(temp, pattern)) != NULL)
+    {
         count++;
-        start += pattern_len; // Move past the pattern
+        temp += pattern_len;  // Skip the matched pattern
     }
 
-    // Allocate memory for the result structure
+    // Allocate memory for the result strings
     result.strings = (char **)malloc(count * sizeof(char *));
-    if (result.strings == NULL) {
-        return result;
+    if (result.strings == NULL)
+    {
+        return result;  // Memory allocation failure
     }
 
-    start = string;
+    // Split the string and store the substrings in result.strings
     size_t index = 0;
-    const char *end;
+    const char *start = string;
+    while (*start)
+    {
+        const char *end = strstr_m(start, pattern);
 
-    // Split the string based on the pattern
-    while ((end = strstr_m(start, pattern)) != NULL) {
-        size_t len = end - start;
-        result.strings[index] = (char *)malloc(len + 1);
-        if (result.strings[index] == NULL) {
-            free_strings(result);
-            result.num_strings = 0;
-            return result;
+        if (end != NULL)
+        {
+            // Copy the substring from start to end (excluding the pattern)
+            result.strings[index] = strncpy_m(start, end - start);
+            start = end + pattern_len;  // Move start past the pattern
         }
-        for (size_t i = 0; i < len; i++) {
-            result.strings[index][i] = start[i];
+        else
+        {
+            // If no more patterns are found, copy the remaining part of the string
+            result.strings[index] = strncpy_m(start, strlen_m(start));
+            break;
         }
-        result.strings[index][len] = '\0';
-        start = end + pattern_len; // Move past the pattern
         index++;
     }
 
-    // Handle the last part after the last occurrence of the pattern
-    if (*start != '\0') {
-        result.strings[index] = (char *)malloc(strlen_m(start) + 1);
-        if (result.strings[index] == NULL) {
-            free_strings(result);
-            result.num_strings = 0;
-            return result;
-        }
-        for (size_t i = 0; start[i] != '\0'; i++) {
-            result.strings[index][i] = start[i];
-        }
-        result.strings[index][strlen_m(start)] = '\0';
-        index++;
-    }
-
-    result.num_strings = index;
-
+    result.num_strings = count;
     return result;
 }
 
@@ -218,7 +210,7 @@ char *find_and_replace_all_m(const char *string, const char *pattern, const char
     // Allocate memory for the new string
     char *result = (char *)malloc(new_len + 1);
     if (result == NULL) {
-        return NULL;
+        return NULL; // Return NULL if malloc fails
     }
 
     size_t pos = 0;
@@ -243,13 +235,13 @@ char *find_and_replace_all_m(const char *string, const char *pattern, const char
     }
 
     result[pos] = '\0';
-
     return result;
 }
 
 /*
-** This function is the one you specifically provided.
-** It should remain untouched as per your instructions.
+** The strstr function is implemented for you to use -- DO NOT MODIFY
+** If you are curious about the algorithm used, look up the Knuth-Morris-Pratt (KMP)
+** algorithm that can find a substring inside another string 'blazingly fast'
 */
 const char *strstr_m(const char *haystack, const char *needle)
 {
@@ -300,6 +292,8 @@ const char *strstr_m(const char *haystack, const char *needle)
     free(lps_arr);
     free(lps_str);
     if (success)
-        return haystack + r - needle_len;
+        return haystack + (r - l - needle_len - 1);
     return NULL;
 }
+
+
