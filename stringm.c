@@ -10,74 +10,77 @@ size_t strlen_m(const char *s) {
     return length;
 }
 
-// Copies up to `n` characters from `src` to `dest`
-char *strncpy_m(char *dest, const char *src, size_t n) {
+// Copies up to `n` characters from `string` to a newly allocated string
+char *strncpy_m(const char *string, size_t n) {
+    char *new_str = malloc(n + 1);
+    if (!new_str) return NULL;
     size_t i;
-    for (i = 0; i < n && src[i] != '\0'; i++) {
-        dest[i] = src[i];
+    for (i = 0; i < n && string[i] != '\0'; i++) {
+        new_str[i] = string[i];
     }
     while (i < n) {
-        dest[i++] = '\0';
+        new_str[i++] = '\0';
     }
-    return dest;
+    new_str[n] = '\0';
+    return new_str;
 }
 
-// Joins an array of strings `strs` with the given delimiter `sep`
-char *join_m(const char **strs, size_t num_strs, char sep) {
-    if (num_strs == 0) return NULL;
-    size_t total_length = 0;
-    for (size_t i = 0; i < num_strs; i++) {
-        total_length += strlen_m(strs[i]);
+// Joins an array of strings `strings` using the given `delimiter`
+char *join_m(Strings strings, const char *delimiter) {
+    if (strings.count == 0) return NULL;
+    size_t total_length = 0, delim_len = strlen_m(delimiter);
+    for (size_t i = 0; i < strings.count; i++) {
+        total_length += strlen_m(strings.data[i]);
     }
-    total_length += (num_strs - 1) + 1; // for separators and null terminator
+    total_length += (strings.count - 1) * delim_len + 1;
     char *result = malloc(total_length);
     if (!result) return NULL;
     size_t pos = 0;
-    for (size_t i = 0; i < num_strs; i++) {
-        size_t len = strlen_m(strs[i]);
-        strncpy_m(result + pos, strs[i], len);
-        pos += len;
-        if (i < num_strs - 1) {
-            result[pos++] = sep;
+    for (size_t i = 0; i < strings.count; i++) {
+        size_t len = strlen_m(strings.data[i]);
+        for (size_t j = 0; j < len; j++) {
+            result[pos++] = strings.data[i][j];
+        }
+        if (i < strings.count - 1) {
+            for (size_t j = 0; j < delim_len; j++) {
+                result[pos++] = delimiter[j];
+            }
         }
     }
     result[pos] = '\0';
     return result;
 }
 
-// Frees an array of strings `strs`
-void free_strings(char **strs, size_t num_strs) {
-    for (size_t i = 0; i < num_strs; i++) {
-        free(strs[i]);
+// Frees an array of strings `strings`
+void free_strings(Strings strings) {
+    for (size_t i = 0; i < strings.count; i++) {
+        free(strings.data[i]);
     }
-    free(strs);
+    free(strings.data);
 }
 
-// Splits a string `s` into an array using the delimiter `delim`
-char **split_m(const char *s, char delim, size_t *num_tokens) {
-    *num_tokens = 0;
-    size_t length = strlen_m(s);
-    for (size_t i = 0; i < length; i++) {
-        if (s[i] == delim) (*num_tokens)++;
+// Splits a string `string` using the given `pattern`
+Strings split_m(const char *string, const char *pattern) {
+    Strings result = {NULL, 0};
+    size_t pattern_len = strlen_m(pattern), count = 1;
+    for (const char *p = string; (p = strstr_m(p, pattern)); p += pattern_len) {
+        count++;
     }
-    (*num_tokens)++;
-    char **result = malloc((*num_tokens) * sizeof(char *));
-    if (!result) return NULL;
-    size_t start = 0, token_idx = 0;
-    for (size_t i = 0; i <= length; i++) {
-        if (s[i] == delim || s[i] == '\0') {
-            size_t token_length = i - start;
-            result[token_idx] = malloc(token_length + 1);
-            if (!result[token_idx]) {
-                free_strings(result, token_idx);
-                return NULL;
-            }
-            strncpy_m(result[token_idx], s + start, token_length);
-            result[token_idx][token_length] = '\0';
-            start = i + 1;
-            token_idx++;
+    result.data = malloc(count * sizeof(char *));
+    if (!result.data) return result;
+    const char *start = string;
+    size_t idx = 0;
+    for (const char *p = string; (p = strstr_m(start, pattern)); start = p + pattern_len) {
+        size_t len = p - start;
+        result.data[idx] = strncpy_m(start, len);
+        if (!result.data[idx]) {
+            free_strings(result);
+            return result;
         }
+        idx++;
     }
+    result.data[idx] = strdup(start);
+    result.count = count;
     return result;
 }
 
