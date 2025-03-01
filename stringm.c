@@ -167,7 +167,16 @@ Strings split_m(const char *string, const char *pattern)
 
     // Handle the last part after the last occurrence of the pattern
     if (*start != '\0') {
-        result.strings[index] = strdup(start);
+        result.strings[index] = (char *)malloc(strlen_m(start) + 1);
+        if (result.strings[index] == NULL) {
+            free_strings(result);
+            result.num_strings = 0;
+            return result;
+        }
+        for (size_t i = 0; start[i] != '\0'; i++) {
+            result.strings[index][i] = start[i];
+        }
+        result.strings[index][strlen_m(start)] = '\0';
         index++;
     }
 
@@ -218,16 +227,22 @@ char *find_and_replace_all_m(const char *string, const char *pattern, const char
     // Replace all occurrences of the pattern
     while ((start = strstr_m(start, pattern)) != NULL) {
         size_t len = start - string;
-        memcpy(result + pos, string, len);
-        pos += len;
-        memcpy(result + pos, replacement, replacement_len);
-        pos += replacement_len;
+        for (size_t i = 0; i < len; i++) {
+            result[pos++] = string[i];
+        }
+        for (size_t i = 0; i < replacement_len; i++) {
+            result[pos++] = replacement[i];
+        }
         start += pattern_len;
         string = start;
     }
 
     // Copy the remaining part of the string
-    strcpy(result + pos, string);
+    for (size_t i = 0; string[i] != '\0'; i++) {
+        result[pos++] = string[i];
+    }
+
+    result[pos] = '\0';
 
     return result;
 }
