@@ -301,6 +301,6 @@ const char *strstr_m(const char *haystack, const char *needle)
     free(lps_arr);
     free(lps_str);
     if (success)
-        return haystack + (r - l - needle_len - 1);
+        return haystack + r - needle_len;
     return NULL;
 }
