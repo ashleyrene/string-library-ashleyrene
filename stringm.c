@@ -263,4 +263,44 @@ const char *strstr_m(const char *haystack, const char *needle)
     if (needle_len > haystack_len)
         return NULL;
 
-    char *lps_str = malloc(hay
+    char *lps_str = malloc(haystack_len + needle_len + 1);
+    size_t i = 0;
+    for (const char *n = needle; *n; n++, i++)
+        lps_str[i] = *n;
+    lps_str[i++] = '\1';
+    for (const char *h = haystack; *h; h++, i++)
+        lps_str[i] = *h;
+
+    int *lps_arr = calloc((haystack_len + needle_len + 1), sizeof *lps_arr);
+    size_t l = 0, r = 1;
+    bool success = false;
+
+    while (r < haystack_len + needle_len + 1)
+    {
+        if (lps_str[l] == lps_str[r])
+        {
+            l++;
+            lps_arr[r] = l;
+            r++;
+        }
+        else if (l)
+            l = lps_arr[l - 1];
+        else
+        {
+            lps_arr[r] = 0;
+            r++;
+        }
+
+        if (l == needle_len)
+        {
+            success = true;
+            break;
+        }
+    }
+
+    free(lps_arr);
+    free(lps_str);
+    if (success)
+        return haystack + (r - l - needle_len - 1);
+    return NULL;
+}
