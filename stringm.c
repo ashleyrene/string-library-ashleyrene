@@ -135,7 +135,7 @@ Strings split_m(const char *string, const char *pattern)
     // Count how many times the pattern occurs in the string
     while ((start = strstr_m(start, pattern)) != NULL) {
         count++;
-        start += pattern_len;
+        start += pattern_len; // Move past the pattern
     }
 
     // Allocate memory for the result structure
@@ -161,7 +161,7 @@ Strings split_m(const char *string, const char *pattern)
             result.strings[index][i] = start[i];
         }
         result.strings[index][len] = '\0';
-        start = end + pattern_len;
+        start = end + pattern_len; // Move past the pattern
         index++;
     }
 
